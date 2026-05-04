@@ -1127,7 +1127,7 @@ function App() {
                 React.createElement('div',{style:{fontSize:11,color:C.mid,marginTop:2}},
                   disabled ? "Nur verfügbar, wenn Schaumstoff ausgewählt ist." : e.desc)
               ),
-              React.createElement('div',{style:{fontSize:13,color:active?C.sand:C.mid,fontWeight:active?600:300},textAlign:"right"}},
+              React.createElement('div',{style:{fontSize:13,color:active?C.sand:C.mid,fontWeight:active?600:300,textAlign:"right"}},
                 e.price===0?"inkl.":e.perM2?`+${fmt(e.price)}/m²`:`+${fmt(e.price)}`
               )
             );
