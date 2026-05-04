@@ -99,7 +99,7 @@ const C = {
   moss:"#6E8176",sand:"#3F6656",sand2:"#DCE6E0",chalk:"#FFFFFF",mid:"#6B726C",
 };
 const fmt = n => n.toFixed(2).replace(".",",") + " €";
-const FABRIC_PRICE_MULTIPLIER = 1.15;
+const PRICE_MULTIPLIER = 1.15;
 
 const FOAM_TYPES = {
   "none":      {name:"Kein Schaumstoff",         density:0 },
@@ -144,7 +144,7 @@ const FORMS = [
 ];
 
 const FORM_IMAGES = window.FORM_IMAGES || {};
-const MIN_FABRIC_PRICE = 41;
+const MIN_FABRIC_PRICE = 57.99;
 const FABRIC_BASE_DISCOUNT = 4;
 const FOLDABLE_FORM_SURCHARGE = 20;
 const FABRIC_AVERAGE_PRICE_MULTIPLIER = 2.322;
@@ -179,24 +179,32 @@ const FABRICS = (window.FABRIC_DATA || []).map(fabric => ({
     return discountedBasePrice;
   })(),
 }));
-const FORM_IMAGE_BASE_URL = (window.FORM_IMAGE_BASE_URL || "https://raw.githubusercontent.com/PolsterKonf/polster24-konfigurator/refs/heads/main/forms").replace(/\/+$/,"");
-const FABRIC_IMAGE_BASE_URL = (window.FABRIC_IMAGE_BASE_URL || "https://raw.githubusercontent.com/PolsterKonf/polster24-konfigurator/refs/heads/main/fabrics").replace(/\/+$/,"");
+const FORM_IMAGE_BASE_URL = (window.FORM_IMAGE_BASE_URL || "https://cdn.jsdelivr.net/gh/PolsterKonf/polster24-konfigurator@main/forms").replace(/\/+$/,"");
+const FABRIC_IMAGE_BASE_URL = (window.FABRIC_IMAGE_BASE_URL || "https://cdn.jsdelivr.net/gh/PolsterKonf/polster24-konfigurator@main/fabrics").replace(/\/+$/,"");
 const formImageCache = new Map();
 const getFormImageName = (formId) => {
   const form = FORMS.find(item => item.id === formId);
   return form?.image || form?.label || formId;
 };
+const buildRemoteAssetUrls = (baseUrl, imageName, extensions) => {
+  const encoded = encodeURIComponent(imageName);
+  return extensions.map(ext => `${baseUrl}/${encoded}.${ext}`);
+};
 const getFormImageCandidates = (formId, variant = "detail") => {
   const imageName = getFormImageName(formId);
   if (!imageName) return [];
-  const encoded = encodeURIComponent(imageName);
-  const remoteThumb = ["png","webp","jpg","jpeg"].map(ext => `${FORM_IMAGE_BASE_URL}/${encoded}.${ext}`);
-  const remoteDetail = ["svg","png","webp","jpg","jpeg"].map(ext => `${FORM_IMAGE_BASE_URL}/${encoded}.${ext}`);
+  const remoteThumb = buildRemoteAssetUrls(FORM_IMAGE_BASE_URL, imageName, ["png","jpg","jpeg","webp"]);
+  const remoteDetail = buildRemoteAssetUrls(FORM_IMAGE_BASE_URL, imageName, ["svg","png","jpg","jpeg","webp"]);
   const localThumb = ["png","webp","jpg","jpeg"].map(ext => `forms/${imageName}.${ext}`);
   const localDetail = ["svg","png","webp","jpg","jpeg"].map(ext => `forms/${imageName}.${ext}`);
   return variant === "thumb"
     ? [...remoteThumb, ...localThumb]
     : [...remoteDetail, ...localDetail];
+};
+const getCartFormImageCandidates = (formId) => {
+  const imageName = getFormImageName(formId);
+  if (!imageName) return [];
+  return buildRemoteAssetUrls(FORM_IMAGE_BASE_URL, imageName, ["png","jpg","jpeg"]);
 };
 
 const getFormImageSrc = (formId, variant = "detail") => getFormImageCandidates(formId, variant)[0] || "";
@@ -235,6 +243,9 @@ const resolveFirstWorkingImage = async (cacheKey, candidates) => {
 
 const resolveFormImageSrc = async (formId, variant = "detail") => (
   resolveFirstWorkingImage(`${variant}:${formId}`, getFormImageCandidates(formId, variant))
+);
+const resolveCartFormImageSrc = async (formId) => (
+  resolveFirstWorkingImage(`cart:${formId}`, getCartFormImageCandidates(formId))
 );
 
 const calculateMetrics = (form, dims) => {
@@ -684,16 +695,22 @@ function App() {
   const prices = useMemo(()=>{
     const { surface, volume } = calculateMetrics(cf, dims);
     if(!surface||!volume) return {fabric:0,foam:0,jersey:0,wadding:0,extras:0,total:0,surface:0,volume:0};
+    const scalePrice = (value) => Math.round(value * PRICE_MULTIPLIER * 100) / 100;
     const fabricRaw = fab ? Math.round(surface*fab.p*100)/100 : 0;
     const baseFabricCost = fabricRaw>0 ? Math.max(MIN_FABRIC_PRICE, fabricRaw) : 0;
-    const fabricCost = Math.round(baseFabricCost * FABRIC_PRICE_MULTIPLIER * 100) / 100;
-    const foamCost = foam.density>0 ? Math.round(cf.foamFactor*FOAM_PRICE_PER_KG*foam.density*volume*100)/100 : 0;
-    const jerseyCost  = extras.trik ? Math.round(2*surface*100)/100 : 0;
-    const waddingCost = extras.watt ? Math.round(5*surface*100)/100 : 0;
-    const formSurcharge = (cf.id==="9" || cf.id==="22") ? FOLDABLE_FORM_SURCHARGE : 0;
-    const otherExtras = EXTRAS
+    const baseFoamCost = foam.density>0 ? Math.round(cf.foamFactor*FOAM_PRICE_PER_KG*foam.density*volume*100)/100 : 0;
+    const baseJerseyCost  = extras.trik ? Math.round(2*surface*100)/100 : 0;
+    const baseWaddingCost = extras.watt ? Math.round(5*surface*100)/100 : 0;
+    const baseFormSurcharge = (cf.id==="9" || cf.id==="22") ? FOLDABLE_FORM_SURCHARGE : 0;
+    const baseOtherExtras = EXTRAS
       .filter(e=>e.id!=="watt"&&e.id!=="trik"&&extras[e.id])
       .reduce((s,e)=>s+(e.perM2 ? Math.round(e.price*surface*100)/100 : e.price),0);
+    const fabricCost = scalePrice(baseFabricCost);
+    const foamCost = scalePrice(baseFoamCost);
+    const jerseyCost = scalePrice(baseJerseyCost);
+    const waddingCost = scalePrice(baseWaddingCost);
+    const formSurcharge = scalePrice(baseFormSurcharge);
+    const otherExtras = scalePrice(baseOtherExtras);
     const total = fabricCost+foamCost+jerseyCost+waddingCost+otherExtras+formSurcharge;
     return {fabric:fabricCost,foam:foamCost,jersey:jerseyCost,wadding:waddingCost,formSurcharge,
       extras:otherExtras,total:Math.round(total*100)/100,
@@ -701,7 +718,7 @@ function App() {
       volume:Math.round(volume*1000000)/10};
   },[dims.a,dims.b,dims.c,dims.d,dims.e,fab,foamKey,extras,cf]);
 
-  const shipping = prices.total>0 ? (prices.total>=89?0:4.50) : 0;
+  const shipping = prices.total>0 ? (prices.total>=100?0:6.50) : 0;
   const dimsOK = cf.sides.every(k=>(dims[k]||"")&&parseFloat(dims[k])>0);
   const canNext = [true,dimsOK,!!fabric,true,true,true];
   const go=n=>{if(n>=0&&n<=5)setStep(n);};
@@ -1049,7 +1066,7 @@ function App() {
         const handleAddToCart = async () => {
           clearCartRequestTimeout();
           setCartError(null);setCartLoading(true);
-          const resolvedFormImage = await resolveFormImageSrc(formId, "detail");
+          const resolvedFormImage = await resolveCartFormImageSrc(formId);
           const cartData = {
             form:cf.label,formId,dims,
             fabric:fab?{id:fabric,name:fab.n,price:fab.p}:null,
@@ -1366,7 +1383,7 @@ function App() {
           fontFamily:"DM Sans, sans-serif",letterSpacing:"-0.03em"}},prices.total>0?fmt(prices.total+shipping):"–")
       ),
       React.createElement('div',{style:{marginTop:"auto",display:"flex",flexDirection:"column",gap:4}},
-        ["OEKO-TEX® zertifiziert","±2 mm Präzision","Made in Germany","Kostenlose Muster"].map(t=>
+        ["±2 mm Präzision","Made in Germany","Kostenlose Muster"].map(t=>
           React.createElement('div',{key:t,style:{fontSize:10,color:C.mid,
             display:"flex",alignItems:"center",gap:5}},
             React.createElement('span',{style:{color:C.sand2,flexShrink:0}},"✓"),t
