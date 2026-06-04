@@ -1330,6 +1330,7 @@ function App() {
             total:Math.round((prices.total+shipping)*100)/100,
             shipping,beschreibung,
             image:resolvedFormImage,
+            pillowImage:PILLOW_IMAGE_URL,
           };
           window.parent.postMessage({type:"POLSTER24_ADD_TO_CART",data:cartData},"*");
           cartRequestTimeoutRef.current = setTimeout(()=>{
