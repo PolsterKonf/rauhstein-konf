@@ -768,6 +768,8 @@ function App() {
   const [order,      setOrder]     = useState({fn:"",ln:"",email:"",phone:"",addr:"",pay:"",note:""});
   const [expandedFabricId, setExpandedFabricId] = useState(null);
   const [cartNoticeOpen, setCartNoticeOpen] = useState(false);
+  const [productSafetyOpen, setProductSafetyOpen] = useState(false);
+  const [customMadeNoticeOpen, setCustomMadeNoticeOpen] = useState(false);
   const mainContentRef = useRef(null);
   const cartRequestTimeoutRef = useRef(null);
 
@@ -1503,6 +1505,76 @@ function App() {
                 lineHeight:1.6
               }
             })
+          ),
+          React.createElement('div',{style:{marginBottom:"1rem"}},
+            React.createElement('button',{
+              type:"button",
+              onClick:()=>setProductSafetyOpen(current => !current),
+              style:{
+                width:"100%",background:"#FFFFFF",border:"1px solid rgba(0,0,0,.08)",
+                borderRadius:5,padding:"1rem",display:"flex",alignItems:"center",justifyContent:"space-between",
+                cursor:"pointer",fontSize:13,fontWeight:600,color:C.bark
+              }
+            },
+              React.createElement('span',null,"Hersteller & Produktsicherheit"),
+              React.createElement('span',{style:{fontSize:18,color:C.moss}},productSafetyOpen ? "−" : "+")
+            ),
+            productSafetyOpen && React.createElement('div',{style:{
+              background:"#FFFFFF",border:"1px solid rgba(0,0,0,.08)",borderTop:"none",
+              borderRadius:"0 0 5px 5px",padding:"1rem"
+            }},
+              React.createElement('div',{style:{fontSize:12,color:C.mid,lineHeight:1.7}},
+                React.createElement('p',{style:{marginBottom:"0.8rem"}},
+                  "Hersteller: Rauhstein Viktor Schild, Lange Str. 29, 33613 Bielefeld, Deutschland, E-Mail: info@rauhstein.de"
+                ),
+                React.createElement('p',{style:{marginBottom:"0.8rem"}},
+                  "Produktidentifikation: Das Produkt wird individuell nach Konfiguration aus Form, Maßen, Bezugsstoff, optionalem Schaumstoff sowie gewählten Extras gefertigt."
+                ),
+                React.createElement('p',{style:{marginBottom:"0.45rem"}},
+                  "Sicherheitshinweise:"
+                ),
+                React.createElement('ul',{style:{paddingLeft:"1.1rem",margin:"0 0 0.8rem"}},
+                  React.createElement('li',null,"Nur bestimmungsgemäß als Polster, Bezug oder Kissen verwenden."),
+                  React.createElement('li',null,"Von offenen Flammen, glimmenden Gegenständen und starken Hitzequellen fernhalten."),
+                  React.createElement('li',null,"Kein Spielzeug; Verpackungsmaterial von Kindern fernhalten."),
+                  React.createElement('li',null,"Vor Nutzung prüfen, ob Untergrund, Auflagefläche und Einsatzbereich geeignet sind."),
+                  React.createElement('li',null,"Bei sichtbaren Beschädigungen nur weiterverwenden, wenn kein Sicherheitsrisiko besteht.")
+                ),
+                React.createElement('p',null,
+                  "Kontakt für Sicherheitsanfragen: info@rauhstein.de"
+                )
+              )
+            )
+          ),
+          React.createElement('div',{style:{marginBottom:"1rem"}},
+            React.createElement('button',{
+              type:"button",
+              onClick:()=>setCustomMadeNoticeOpen(current => !current),
+              style:{
+                width:"100%",background:"#FFFFFF",border:"1px solid rgba(0,0,0,.08)",
+                borderRadius:5,padding:"1rem",display:"flex",alignItems:"center",justifyContent:"space-between",
+                cursor:"pointer",fontSize:13,fontWeight:600,color:C.bark
+              }
+            },
+              React.createElement('span',null,"Hinweis zu Maßanfertigung & Widerrufsrecht"),
+              React.createElement('span',{style:{fontSize:18,color:C.moss}},customMadeNoticeOpen ? "−" : "+")
+            ),
+            customMadeNoticeOpen && React.createElement('div',{style:{
+              background:"#FFFFFF",border:"1px solid rgba(0,0,0,.08)",borderTop:"none",
+              borderRadius:"0 0 5px 5px",padding:"1rem"
+            }},
+              React.createElement('div',{style:{fontSize:12,color:C.mid,lineHeight:1.7}},
+                React.createElement('p',{style:{marginBottom:"0.8rem"}},
+                  "Dieses Produkt wird individuell nach deinen Vorgaben gefertigt. Maßgeblich für die Anfertigung sind insbesondere Form, Maße, Bezugsstoff, optionaler Schaumstoff sowie gewählte Extras."
+                ),
+                React.createElement('p',{style:{marginBottom:"0.8rem"}},
+                  "Bei solchen individuell konfigurierten Maßanfertigungen kann das Widerrufsrecht ausgeschlossen sein."
+                ),
+                React.createElement('p',null,
+                  "Rechtsgrundlage: § 312g Abs. 2 Nr. 1 BGB."
+                )
+              )
+            )
           ),
           cartError&&React.createElement('div',{style:{background:"rgba(180,60,60,.1)",
             border:"1px solid rgba(180,60,60,.3)",padding:"1rem",marginBottom:"1rem",
