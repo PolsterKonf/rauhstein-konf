@@ -193,13 +193,16 @@ const buildRemoteAssetUrls = (baseUrl, imageName, extensions) => {
   const encoded = encodeURIComponent(imageName);
   return extensions.map(ext => `${baseUrl}/${encoded}.${ext}`);
 };
+const buildLocalAssetUrls = (folders, imageName, extensions) => (
+  folders.flatMap(folder => extensions.map(ext => `${folder}/${imageName}.${ext}`))
+);
 const getFormImageCandidates = (formId, variant = "detail") => {
   const imageName = getFormImageName(formId);
   if (!imageName) return [];
   const remoteThumb = buildRemoteAssetUrls(FORM_IMAGE_BASE_URL, imageName, ["png","jpg","jpeg","webp"]);
   const remoteDetail = buildRemoteAssetUrls(FORM_IMAGE_BASE_URL, imageName, ["svg","png","jpg","jpeg","webp"]);
-  const localThumb = ["png","webp","jpg","jpeg"].map(ext => `forms/${imageName}.${ext}`);
-  const localDetail = ["svg","png","webp","jpg","jpeg"].map(ext => `forms/${imageName}.${ext}`);
+  const localThumb = buildLocalAssetUrls(["forms","forms/forms"], imageName, ["png","webp","jpg","jpeg"]);
+  const localDetail = buildLocalAssetUrls(["forms","forms/forms"], imageName, ["svg","png","webp","jpg","jpeg"]);
   return variant === "thumb"
     ? [...remoteThumb, ...localThumb]
     : [...remoteDetail, ...localDetail];
@@ -207,7 +210,9 @@ const getFormImageCandidates = (formId, variant = "detail") => {
 const getCartFormImageCandidates = (formId) => {
   const imageName = getFormImageName(formId);
   if (!imageName) return [];
-  return buildRemoteAssetUrls(FORM_IMAGE_BASE_URL, imageName, ["png","jpg","jpeg"]);
+  const remoteDetailRaster = buildRemoteAssetUrls(FORM_IMAGE_BASE_URL, imageName, ["png","jpg","jpeg","webp"]);
+  const localDetailRaster = buildLocalAssetUrls(["forms","forms/forms"], imageName, ["png","webp","jpg","jpeg"]);
+  return [...remoteDetailRaster, ...localDetailRaster];
 };
 
 const getFormImageSrc = (formId, variant = "detail") => getFormImageCandidates(formId, variant)[0] || "";
