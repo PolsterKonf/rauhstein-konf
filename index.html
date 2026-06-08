@@ -160,26 +160,34 @@ const FABRIC_TARGET_PRICES = {
   silvertex: 80,
 };
 const FABRIC_EXCLUDED_MULTIPLIER_KEYS = new Set(["silvertex"]);
+const EXCLUDED_FABRIC_IDS = new Set(["sleep_1_300g","sleep_2_150g","sleep_8_150g"]);
+const EXCLUDED_FABRIC_NAMES = new Set(["sleep 8 150g"]);
 const getFabricSeriesKey = (fabric) => (
   ((fabric?.n || "").trim().split(/\s+/)[0] || "")
     .toLocaleLowerCase("de-DE")
     .normalize("NFKD")
     .replace(/[^\p{L}\p{N}]+/gu, "")
 );
-const FABRICS = (window.FABRIC_DATA || []).map(fabric => ({
-  ...fabric,
-  p: (() => {
-    const seriesKey = getFabricSeriesKey(fabric);
-    const discountedBasePrice = Math.max(0, Number(fabric?.p || 0) - FABRIC_BASE_DISCOUNT);
-    if (Object.prototype.hasOwnProperty.call(FABRIC_TARGET_PRICES, seriesKey)) {
-      return FABRIC_TARGET_PRICES[seriesKey];
-    }
-    if (!FABRIC_EXCLUDED_MULTIPLIER_KEYS.has(seriesKey)) {
-      return Math.round(discountedBasePrice * FABRIC_AVERAGE_PRICE_MULTIPLIER * 100) / 100;
-    }
-    return discountedBasePrice;
-  })(),
-}));
+const FABRICS = (window.FABRIC_DATA || [])
+  .filter(fabric => {
+    const id = String(fabric?.id || "").trim().toLocaleLowerCase("de-DE");
+    const name = String(fabric?.n || "").trim().toLocaleLowerCase("de-DE");
+    return !EXCLUDED_FABRIC_IDS.has(id) && !EXCLUDED_FABRIC_NAMES.has(name);
+  })
+  .map(fabric => ({
+    ...fabric,
+    p: (() => {
+      const seriesKey = getFabricSeriesKey(fabric);
+      const discountedBasePrice = Math.max(0, Number(fabric?.p || 0) - FABRIC_BASE_DISCOUNT);
+      if (Object.prototype.hasOwnProperty.call(FABRIC_TARGET_PRICES, seriesKey)) {
+        return FABRIC_TARGET_PRICES[seriesKey];
+      }
+      if (!FABRIC_EXCLUDED_MULTIPLIER_KEYS.has(seriesKey)) {
+        return Math.round(discountedBasePrice * FABRIC_AVERAGE_PRICE_MULTIPLIER * 100) / 100;
+      }
+      return discountedBasePrice;
+    })(),
+  }));
 const FORM_IMAGE_BASE_URL = (window.FORM_IMAGE_BASE_URL || "https://cdn.jsdelivr.net/gh/PolsterKonf/polster24-konfigurator@main/forms").replace(/\/+$/,"");
 const FABRIC_IMAGE_BASE_URL = (window.FABRIC_IMAGE_BASE_URL || "https://cdn.jsdelivr.net/gh/PolsterKonf/polster24-konfigurator@main/fabrics").replace(/\/+$/,"");
 const REPO_IMAGE_BASE_URL = FORM_IMAGE_BASE_URL.replace(/\/forms$/,"");
