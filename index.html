@@ -829,6 +829,12 @@ function App() {
     return ()=>window.removeEventListener("message", handler);
   },[clearCartRequestTimeout]);
 
+  useEffect(() => {
+    try {
+      window.parent.postMessage({ type: "POLSTER24_READY" }, "*");
+    } catch (e) {}
+  }, []);
+
   useEffect(() => () => clearCartRequestTimeout(), [clearCartRequestTimeout]);
 
   useEffect(()=>{
