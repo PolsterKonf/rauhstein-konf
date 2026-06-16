@@ -191,7 +191,6 @@ const FABRICS = (window.FABRIC_DATA || [])
 const FORM_IMAGE_BASE_URL = (window.FORM_IMAGE_BASE_URL || "https://cdn.jsdelivr.net/gh/PolsterKonf/rauhstein-konf@main/forms").replace(/\/+$/,"");
 const FABRIC_IMAGE_BASE_URL = (window.FABRIC_IMAGE_BASE_URL || "https://cdn.jsdelivr.net/gh/PolsterKonf/rauhstein-konf@main/fabrics").replace(/\/+$/,"");
 const REPO_IMAGE_BASE_URL = FORM_IMAGE_BASE_URL.replace(/\/forms$/,"");
-const PILLOW_IMAGE_URL = window.PILLOW_IMAGE_URL || `${REPO_IMAGE_BASE_URL}/Kissen-Vektor.webp`;
 const formImageCache = new Map();
 const getFormImageName = (formId) => {
   const form = FORMS.find(item => item.id === formId);
@@ -207,16 +206,28 @@ const buildLocalAssetUrls = (folders, imageName, extensions) => (
 const getRepoAssetBases = (baseUrl) => {
   if (!baseUrl) return [];
   const bases = [baseUrl];
-  const jsdelivrMatch = baseUrl.match(/^https:\/\/cdn\.jsdelivr\.net\/gh\/([^/]+)\/([^@/]+)@([^/]+)\/(.+)$/i);
+  const jsdelivrMatch = baseUrl.match(/^https:\/\/cdn\.jsdelivr\.net\/gh\/([^/]+)\/([^@/]+)@([^/]+)(?:\/(.+))?$/i);
 
   if (jsdelivrMatch) {
     const [, owner, repo, ref, folder] = jsdelivrMatch;
-    bases.push(`https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${folder}`);
-    bases.push(`https://${owner.toLowerCase()}.github.io/${repo}/${folder}`);
+    const cleanFolder = folder ? `/${folder.replace(/^\/+/,"")}` : "";
+    bases.push(`https://raw.githubusercontent.com/${owner}/${repo}/${ref}${cleanFolder}`);
+    bases.push(`https://${owner.toLowerCase()}.github.io/${repo}${cleanFolder}`);
   }
 
   return [...new Set(bases.map(item => item.replace(/\/+$/,"")).filter(Boolean))];
 };
+const PILLOW_IMAGE_CANDIDATES = [
+  ...(window.PILLOW_IMAGE_URL ? [window.PILLOW_IMAGE_URL] : []),
+  ...getRepoAssetBases(REPO_IMAGE_BASE_URL).flatMap(baseUrl =>
+    buildRemoteAssetUrls(baseUrl, "Kissen-Vektor", ["webp","png","jpg","jpeg","svg"])
+  ),
+  "Kissen-Vektor.webp",
+  "./Kissen-Vektor.webp",
+  "Kissen-Vektor.png",
+  "./Kissen-Vektor.png",
+];
+const PILLOW_IMAGE_URL = PILLOW_IMAGE_CANDIDATES[0] || "";
 const getFormImageCandidates = (formId, variant = "detail") => {
   const imageName = getFormImageName(formId);
   if (!imageName) return [];
@@ -512,10 +523,34 @@ const EditLinkButton = ({label, onClick}) => React.createElement('button',{
 
 const PillowIcon = ({width, height}) => {
   const isWide = width > height;
+  const [idx, setIdx] = useState(0);
+  const src = PILLOW_IMAGE_CANDIDATES[idx];
+
+  useEffect(() => {
+    setIdx(0);
+  }, []);
+
+  if (!src) {
+    return React.createElement('div',{
+      ariaHidden:"true",
+      style:{
+        display:"flex",
+        alignItems:"center",
+        justifyContent:"center",
+        width:isWide?92:68,
+        height:isWide?58:68,
+        margin:"0 auto",
+        color:C.mid,
+        fontSize:28
+      }
+    },"□");
+  }
+
   return React.createElement('img',{
-    src:PILLOW_IMAGE_URL,
+    src,
     alt:"",
     ariaHidden:"true",
+    onError:()=>setIdx(current => current + 1 < PILLOW_IMAGE_CANDIDATES.length ? current + 1 : current),
     style:{
       display:"block",
       width:isWide?92:68,
