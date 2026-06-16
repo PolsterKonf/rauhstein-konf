@@ -204,6 +204,19 @@ const buildRemoteAssetUrls = (baseUrl, imageName, extensions) => {
 const buildLocalAssetUrls = (folders, imageName, extensions) => (
   folders.flatMap(folder => extensions.map(ext => `${folder}/${imageName}.${ext}`))
 );
+const getRepoAssetBases = (baseUrl) => {
+  if (!baseUrl) return [];
+  const bases = [baseUrl];
+  const jsdelivrMatch = baseUrl.match(/^https:\/\/cdn\.jsdelivr\.net\/gh\/([^/]+)\/([^@/]+)@([^/]+)\/(.+)$/i);
+
+  if (jsdelivrMatch) {
+    const [, owner, repo, ref, folder] = jsdelivrMatch;
+    bases.push(`https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${folder}`);
+    bases.push(`https://${owner.toLowerCase()}.github.io/${repo}/${folder}`);
+  }
+
+  return [...new Set(bases.map(item => item.replace(/\/+$/,"")).filter(Boolean))];
+};
 const getFormImageCandidates = (formId, variant = "detail") => {
   const imageName = getFormImageName(formId);
   if (!imageName) return [];
@@ -378,10 +391,15 @@ const getFabricImageCandidates = (fabric) => {
     FABRIC_IMAGE_BASE_URL &&
     !FABRIC_IMAGE_BASE_URL.includes("DEIN-BENUTZERNAME/DEIN-REPO");
 
-  if (!hasConfiguredGithubBase) return custom;
-
   const exts = ["jpg","jpeg","png","webp"];
-  return [...custom, ...exts.map(ext => `${FABRIC_IMAGE_BASE_URL}/${fabric.id}.${ext}`)];
+  const local = buildLocalAssetUrls(["fabrics","fabrics/fabrics"], fabric.id, exts);
+
+  if (!hasConfiguredGithubBase) return [...custom, ...local];
+
+  const remote = getRepoAssetBases(FABRIC_IMAGE_BASE_URL)
+    .flatMap(baseUrl => buildRemoteAssetUrls(baseUrl, fabric.id, exts));
+
+  return [...custom, ...remote, ...local];
 };
 
 const PROP_LABELS = {
